@@ -208,15 +208,20 @@ _tz() {
                 _tz_set_root "$detected"
                 root="$detected"
             else
-                # not in a treehouse
+                # not in a treehouse — offer to jump back to cached scope
                 if [ -n "$root" ] && [ -d "$root" ]; then
                     echo "Not in a treehouse." >&2
-                    printf "Go back to last treehouse root (%s)? [y/N] " "$root" >&2
+                    printf "Jump back to treehouse scope (%s)? [y/N] " "$root" >&2
                     local answer
                     read -r answer
                     case "$answer" in
-                        [Yy]*) builtin cd "$root"; return;;
-                        *)     _tz_set_root ""; return 1;;
+                        [Yy]*)
+                            # keep cached root, fall through to process query
+                            ;;
+                        *)
+                            _tz_set_root ""
+                            return 1
+                            ;;
                     esac
                 else
                     echo "Not in a treehouse and no previous root available." >&2
