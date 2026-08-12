@@ -59,20 +59,25 @@ _tz() {
     }
 
     _tz_detect_root() {
-        # Run 'treehouse status' and extract the "you're here" worktree path
         local status_output
         status_output=$(treehouse status 2>&1) || return 1
-        local root
-        root=$(printf '%s\n' "$status_output" | \awk '/you'\''re here/ { print $NF }')
-        if [ -n "$root" ]; then
-            # expand ~ to $HOME
-            case "$root" in
-                "~/"*) root="$HOME/${root#"~/"}";;
-                "~")   root="$HOME";;
+
+        local candidate
+        while IFS= read -r candidate; do
+            [ -z "$candidate" ] && continue
+            # expand ~
+            case "$candidate" in
+                "~/"*) candidate="$HOME/${candidate#"~/"}";;
+                "~")   candidate="$HOME";;
             esac
-            printf '%s' "$root"
-            return 0
-        fi
+            case "$PWD" in
+                "$candidate"*)
+                    printf '%s' "$candidate"
+                    return 0
+                    ;;
+            esac
+        done < <(printf '%s\n' "$status_output" | \awk 'NF { print $NF }')
+
         return 1
     }
 
